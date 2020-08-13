@@ -17,14 +17,14 @@ namespace split_me
             }
             catch (IndexOutOfRangeException)
             {
-                Console.WriteLine("Пропущен аргумент командной строки");
+                Console.WriteLine("ОШИБКА, пропущен аргумент командной строки");
                 return(1);
             }
             string fn_pattern  = @"^(?<fname>[^\.]+)\.(?:csv|CSV)$";
             Regex fn_regex = new Regex(fn_pattern); // делаем объект для работы регулярного выражения с нашим шаблоном
             MatchCollection fn_matches = fn_regex.Matches(fn_argv); // натравливаем регулярку на нашу текущую строку файла
             if (fn_matches.Count != 1) {
-                Console.WriteLine("Аргумент командной строки должен быть вида *.csv");
+                Console.WriteLine("ОШИБКА, аргумент командной строки должен быть вида *.csv");
                 return(1);
             }
             GroupCollection fn_groups = fn_matches[0].Groups;
@@ -37,7 +37,7 @@ namespace split_me
             }
             catch (FileNotFoundException)
             {
-                Console.WriteLine("Входной файл не найден");
+                Console.WriteLine("ОШИБКА, входной файл не найден");
                 return(1);               
             }
 
@@ -50,12 +50,25 @@ namespace split_me
             Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
 
             // для вывода в файлы:
-            string s_avtorskimi_out_fname = base_fname+" - с авторскими -.csv";
-            string s_avtorskimi_head = "ORDERID,NUM";
+            string s_avtorskimi_out_fname = base_fname+" - с авторскими -.csv";                
             string bez_avtorskikh_out_fname = base_fname+" - без авторских -.csv";
+            // шапки файлов для вывода
+            string s_avtorskimi_head = "ORDERID,NUM";
             string bez_avtorskikh_head = "FUND,PIN,NUM";
             
-            // для вывода в файлы
+            // если выходные файлы есть, то выходим по ошибке
+            if (File.Exists(s_avtorskimi_out_fname))
+            {
+                Console.WriteLine("ОШИБКА, выходной файл"+Environment.NewLine+"{0}"+Environment.NewLine+"существует. Переименуйте или удалите его",s_avtorskimi_out_fname);
+                return(1);
+            }
+            if (File.Exists(bez_avtorskikh_out_fname))
+            {
+                Console.WriteLine("ОШИБКА, выходной файл"+Environment.NewLine+"{0}"+Environment.NewLine+"существует. Переименуйте или удалите его",bez_avtorskikh_out_fname);
+                return(1);
+            }
+            
+            // начало вывода в файлы
             StreamWriter s_avtorskimi_sw = new StreamWriter(s_avtorskimi_out_fname);
             s_avtorskimi_sw.WriteLine(s_avtorskimi_head);
             StreamWriter bez_avtorskikh_sw = new StreamWriter(bez_avtorskikh_out_fname);
@@ -105,7 +118,7 @@ namespace split_me
             Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_read_sum);
             if (total_sum == total_read_sum)
             {
-                Console.WriteLine("Всё ОК, суммы совпадают");
+                Console.WriteLine("ВСЁ ОК, суммы совпадают");
                 return(0);
             } else
             {
