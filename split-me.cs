@@ -57,16 +57,18 @@ namespace split_me
             string bez_avtorskikh_head = "FUND,PIN,NUM";
             
             // если выходные файлы есть, то выходим по ошибке
+            bool l_error=false;
             if (File.Exists(s_avtorskimi_out_fname))
             {
                 Console.WriteLine("ОШИБКА, выходной файл"+Environment.NewLine+"{0}"+Environment.NewLine+"существует. Переименуйте или удалите его",s_avtorskimi_out_fname);
-                return(1);
+                l_error=true;
             }
             if (File.Exists(bez_avtorskikh_out_fname))
             {
                 Console.WriteLine("ОШИБКА, выходной файл"+Environment.NewLine+"{0}"+Environment.NewLine+"существует. Переименуйте или удалите его",bez_avtorskikh_out_fname);
-                return(1);
+                l_error=true;
             }
+            if (l_error) return(1);
             
             // начало вывода в файлы
             StreamWriter s_avtorskimi_sw = new StreamWriter(s_avtorskimi_out_fname);
