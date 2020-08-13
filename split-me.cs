@@ -29,7 +29,6 @@ namespace split_me
             }
             GroupCollection fn_groups = fn_matches[0].Groups;
             string base_fname = fn_groups["fname"].Value.ToString();
-            //Console.WriteLine(base_fname);
 
             StreamReader sr;
             try
@@ -47,6 +46,8 @@ namespace split_me
             Regex s_avtorskimi_regex = new Regex(s_avtorskimi_pattern);
             string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
             Regex bez_avtorskikh_regex = new Regex(bez_avtorskikh_pattern);
+            string total_read_sum_pattern = @"^\,(?<num>\d+)$";
+            Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
 
             // для вывода в файлы:
             string s_avtorskimi_out_fname = base_fname+" - с авторскими -.csv";
@@ -61,7 +62,7 @@ namespace split_me
             bez_avtorskikh_sw.WriteLine(bez_avtorskikh_head);
             
             // для общей суммы выдачи, для проверки
-            int s_avtorskimi_sum=0, bez_avtorskikh_sum=0;
+            int s_avtorskimi_sum=0, bez_avtorskikh_sum=0, total_sum=0, total_read_sum=0;
             
             string line; // текущая строка
             while ((line = sr.ReadLine()) != null) // цикл по всем строкам, пока не EOF
@@ -82,15 +83,33 @@ namespace split_me
                             groups = matches[0].Groups;
                             s_avtorskimi_sw.WriteLine("{0},{1}",groups["orderid"].Value.ToString(),groups["num"].Value.ToString());
                             s_avtorskimi_sum += Int32.Parse(groups["num"].Value);
+                        } else
+                        {
+                            matches = total_read_sum_regex.Matches(line);
+                            if (matches.Count == 1) // если совпадение нашлось
+                            {
+                                groups = matches[0].Groups;
+                                total_read_sum = Int32.Parse(groups["num"].Value);
+                                break;
+                            }
                         }
                     }
-                    //Console.WriteLine(line);
                 }
             sr.Close();
             bez_avtorskikh_sw.Close();
             s_avtorskimi_sw.Close();
-            Console.WriteLine("Общая сумма: {0}",s_avtorskimi_sum+bez_avtorskikh_sum);
-            return(0);
+            total_sum = s_avtorskimi_sum + bez_avtorskikh_sum;
+            Console.WriteLine("Общая подсчитанная сумма: {0}",total_sum);
+            Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_read_sum);
+            if (total_sum == total_read_sum)
+            {
+                Console.WriteLine("Всё ОК, суммы совпадают");
+                return(0);
+            } else
+            {
+                Console.WriteLine("ОШИБКА, суммы не совпадают");
+                return(1);
+            }
         }
     }
 }
