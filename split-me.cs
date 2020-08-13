@@ -20,7 +20,7 @@ namespace split_me
                 Console.WriteLine("Пропущен аргумент командной строки");
                 return(1);
             }
-            string fn_pattern  = @"^(?<fname>[^\.]+)\.(csv|CSV)$";
+            string fn_pattern  = @"^(?<fname>[^\.]+)\.(?:csv|CSV)$";
             Regex fn_regex = new Regex(fn_pattern); // делаем объект для работы регулярного выражения с нашим шаблоном
             MatchCollection fn_matches = fn_regex.Matches(fn_argv); // натравливаем регулярку на нашу текущую строку файла
             if (fn_matches.Count != 1) {
