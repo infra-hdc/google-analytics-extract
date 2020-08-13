@@ -99,6 +99,8 @@ namespace split_me
             bez_avtorskikh_sw.Close();
             s_avtorskimi_sw.Close();
             total_sum = s_avtorskimi_sum + bez_avtorskikh_sum;
+            Console.WriteLine("Подсчитанная сумма с авторскими: {0}",s_avtorskimi_sum);
+            Console.WriteLine("Подсчитанная сумма без авторских: {0}",bez_avtorskikh_sum);
             Console.WriteLine("Общая подсчитанная сумма: {0}",total_sum);
             Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_read_sum);
             if (total_sum == total_read_sum)
