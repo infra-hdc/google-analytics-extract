@@ -88,7 +88,6 @@ namespace split_me
             // для общей суммы выдачи, для проверки
             int s_avtorskimi_sum=0, bez_avtorskikh_sum=0, total_sum=0, total_read_sum=0;
             
-            
             // извлечение данных - begin
             string line; // текущая строка
             while ((line = sr.ReadLine()) != null) // цикл по всем строкам, пока не EOF
@@ -137,7 +136,7 @@ namespace split_me
                 }
             // извлечение данных - end
             
-            // вывод отчета - begin
+            // вывод данных - begin
             foreach (KeyValuePair<string, int> kvp in bez_avtorskikh_aggr.OrderByDescending(key => key.Value))
             {
                 bez_avtorskikh_sw.WriteLine("{0},{1}", kvp.Key.ToString().Replace("_", ","), kvp.Value.ToString());
@@ -146,7 +145,7 @@ namespace split_me
             {
                 s_avtorskimi_sw.WriteLine("{0},{1}", kvp.Key.ToString(), kvp.Value.ToString());
             }
-            // вывод отчета - end
+            // вывод данных - end
             
             // закрываем все файлы
             sr.Close();
