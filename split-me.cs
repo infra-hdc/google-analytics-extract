@@ -88,7 +88,7 @@ namespace split_me
             // для общей суммы выдачи, для проверки
             int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, total_sum=0;
             
-            // извлечение данных - begin
+            // ввод данных - begin
             string line; // текущая строка
             while ((line = sr.ReadLine()) != null) // цикл по всем строкам входного файла, пока не EOF
                 {
@@ -136,7 +136,7 @@ namespace split_me
                         }
                     }
                 }
-            // извлечение данных - end
+            // ввод данных - end
             
             // вывод данных - begin
             int s_avtorskimi_write_sum=0, bez_avtorskikh_write_sum=0;
