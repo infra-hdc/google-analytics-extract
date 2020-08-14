@@ -14,40 +14,41 @@ namespace split_me
             string fn_argv; // имя файла csv
             try
             {
-                fn_argv = args[0]; // читаем входную дату, из первого аргумента командной строки
+                fn_argv = args[0]; // читаем имя входного файла, из первого аргумента командной строки
             }
-            catch (IndexOutOfRangeException)
+            catch (IndexOutOfRangeException) // если аргумента нет
             {
+                // то вывод помощи
                 Console.WriteLine("ОШИБКА, пропущен аргумент командной строки");
                 Console.WriteLine("Формат команды: split-me.exe <что-то-там>.csv");
                 Console.WriteLine("Где <что-то-там>.csv -- входной файл");
                 Console.WriteLine("На выходе -- два файла:");
                 Console.WriteLine("Выходной файл с авторскими: <что-то-там> - с авторскими -.csv");
                 Console.WriteLine("Выходной файл без авторских: <что-то-там> - без авторских -.csv");
-                return(1);
+                return(1); // и выход из программы
             }
-            string fn_pattern  = @"^(?<fname>[^\.]+)\.(?:csv|CSV)$";
+            string fn_pattern  = @"^(?<fname>[^\.]+)\.(?:csv|CSV)$"; // имя файла должно оканчиваться на .csv
             Regex fn_regex = new Regex(fn_pattern); // делаем объект для работы регулярного выражения с нашим шаблоном
-            MatchCollection fn_matches = fn_regex.Matches(fn_argv); // натравливаем регулярку на нашу текущую строку файла
+            MatchCollection fn_matches = fn_regex.Matches(fn_argv); // натравливаем регулярку на нашу текущую строку с именем файла
             if (fn_matches.Count != 1) {
                 Console.WriteLine("ОШИБКА, аргумент командной строки должен быть вида *.csv");
                 return(1);
             }
             GroupCollection fn_groups = fn_matches[0].Groups;
-            string base_fname = fn_groups["fname"].Value.ToString();
+            string base_fname = fn_groups["fname"].Value.ToString(); // сохраняем имя файла "без расширения"
 
             StreamReader sr;
             try
             {
                 sr = new StreamReader(fn_argv, System.Text.Encoding.Default);
             }
-            catch (FileNotFoundException)
+            catch (FileNotFoundException) // если файле не найден
             {
                 Console.WriteLine("ОШИБКА, входной файл не найден");
-                return(1);               
+                return(1); // то выход из программы               
             }
 
-            // для парсинга входного файла
+            // регулярные выражения для парсинга входного файла
             string s_avtorskimi_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
             Regex s_avtorskimi_regex = new Regex(s_avtorskimi_pattern);
             string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund_pin>\w+_\d+)[^\,]+\,(?<num>\d+)$";
@@ -55,7 +56,7 @@ namespace split_me
             string total_read_sum_pattern = @"^\,(?<num>\d+)$";
             Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
             
-            Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по ID заказа
+            Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по <ID-заказа>
             Dictionary<string, int> bez_avtorskikh_aggr = new Dictionary<string, int>(); // количество обращений без авторских, сагрегированных по парам <фонд>_<пин>
 
             // для вывода в файлы:
@@ -79,7 +80,7 @@ namespace split_me
             }
             if (l_error) return(1);
             
-            // начало вывода в файлы
+            // начало вывода в файлы: открываем на запись (старое содержимое удаляется) и выводим шапку
             StreamWriter s_avtorskimi_sw = new StreamWriter(s_avtorskimi_out_fname);
             s_avtorskimi_sw.WriteLine(s_avtorskimi_head);
             StreamWriter bez_avtorskikh_sw = new StreamWriter(bez_avtorskikh_out_fname);
@@ -90,7 +91,7 @@ namespace split_me
             
             // извлечение данных - begin
             string line; // текущая строка
-            while ((line = sr.ReadLine()) != null) // цикл по всем строкам, пока не EOF
+            while ((line = sr.ReadLine()) != null) // цикл по всем строкам входного файла, пока не EOF
                 {
                     MatchCollection matches;
                     GroupCollection groups;
@@ -103,7 +104,7 @@ namespace split_me
                                 // добавляем объект для пары
                                 bez_avtorskikh_aggr.Add(groups["fund_pin"].Value.ToString(), Int32.Parse(groups["num"].Value));
                             } else
-                            {
+                            {   // иначе прибавляем к объекту
                                 bez_avtorskikh_aggr[groups["fund_pin"].Value.ToString()] += Int32.Parse(groups["num"].Value);
                             }
                         bez_avtorskikh_sum += Int32.Parse(groups["num"].Value);
@@ -118,18 +119,18 @@ namespace split_me
                                     // добавляем объект для пары
                                     s_avtorskimi_aggr.Add(groups["orderid"].Value.ToString(), Int32.Parse(groups["num"].Value));
                                 } else
-                                {
+                                {   // иначе прибавляем к объекту
                                     s_avtorskimi_aggr[groups["orderid"].Value.ToString()] += Int32.Parse(groups["num"].Value);
                                 }
                             s_avtorskimi_sum += Int32.Parse(groups["num"].Value);
                         } else
-                        {
+                        {   // если признак конца данных
                             matches = total_read_sum_regex.Matches(line);
                             if (matches.Count == 1) // если совпадение нашлось
                             {
                                 groups = matches[0].Groups;
-                                total_read_sum = Int32.Parse(groups["num"].Value);
-                                break;
+                                total_read_sum = Int32.Parse(groups["num"].Value);  // счиитываем сумму
+                                break; // и выходим из цикла чтения входного файла
                             }
                         }
                     }
