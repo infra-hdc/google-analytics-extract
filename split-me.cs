@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions; // https://metanit.com/sharp/tutorial/7.4.php
 using System.Collections.Generic; // https://docs.microsoft.com/ru-ru/dotnet/api/system.collections.generic.list-1?view=netcore-3.0 -- только не список, а стек
+using System.Linq;
 
 namespace split_me
 {
@@ -53,6 +54,9 @@ namespace split_me
             Regex bez_avtorskikh_regex = new Regex(bez_avtorskikh_pattern);
             string total_read_sum_pattern = @"^\,(?<num>\d+)$";
             Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
+            
+            Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по ID заказа
+            Dictionary<string, int> bez_avtorskikh_aggr = new Dictionary<string, int>(); // количество обращений без авторских, сагрегированных по парам <фонд>_<пин>
 
             // для вывода в файлы:
             string s_avtorskimi_out_fname = base_fname+" - с авторскими -.csv";                
@@ -84,6 +88,8 @@ namespace split_me
             // для общей суммы выдачи, для проверки
             int s_avtorskimi_sum=0, bez_avtorskikh_sum=0, total_sum=0, total_read_sum=0;
             
+            
+            // извлечение данных - begin
             string line; // текущая строка
             while ((line = sr.ReadLine()) != null) // цикл по всем строкам, пока не EOF
                 {
@@ -93,7 +99,14 @@ namespace split_me
                     if (matches.Count == 1) // если совпадение нашлось
                     {
                         groups = matches[0].Groups;
-                        bez_avtorskikh_sw.WriteLine("{0},{1}",groups["fund_pin"].Value.ToString().Replace("_", ","),groups["num"].Value.ToString());
+                        if (!bez_avtorskikh_aggr.ContainsKey(groups["fund_pin"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары
+                            {
+                                // добавляем объект для пары
+                                bez_avtorskikh_aggr.Add(groups["fund_pin"].Value.ToString(), Int32.Parse(groups["num"].Value));
+                            } else
+                            {
+                                bez_avtorskikh_aggr[groups["fund_pin"].Value.ToString()] += Int32.Parse(groups["num"].Value);
+                            }
                         bez_avtorskikh_sum += Int32.Parse(groups["num"].Value);
                     } else
                     {
@@ -101,7 +114,14 @@ namespace split_me
                         if (matches.Count == 1) // если совпадение нашлось
                         {
                             groups = matches[0].Groups;
-                            s_avtorskimi_sw.WriteLine("{0},{1}",groups["orderid"].Value.ToString(),groups["num"].Value.ToString());
+                            if (!s_avtorskimi_aggr.ContainsKey(groups["orderid"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары
+                                {
+                                    // добавляем объект для пары
+                                    s_avtorskimi_aggr.Add(groups["orderid"].Value.ToString(), Int32.Parse(groups["num"].Value));
+                                } else
+                                {
+                                    s_avtorskimi_aggr[groups["orderid"].Value.ToString()] += Int32.Parse(groups["num"].Value);
+                                }
                             s_avtorskimi_sum += Int32.Parse(groups["num"].Value);
                         } else
                         {
@@ -115,9 +135,25 @@ namespace split_me
                         }
                     }
                 }
+            // извлечение данных - end
+            
+            // вывод отчета - begin
+            foreach (KeyValuePair<string, int> kvp in bez_avtorskikh_aggr.OrderByDescending(key => key.Value))
+            {
+                bez_avtorskikh_sw.WriteLine("{0},{1}", kvp.Key.ToString().Replace("_", ","), kvp.Value.ToString());
+            }
+            foreach (KeyValuePair<string, int> kvp in s_avtorskimi_aggr.OrderByDescending(key => key.Value))
+            {
+                s_avtorskimi_sw.WriteLine("{0},{1}", kvp.Key.ToString(), kvp.Value.ToString());
+            }
+            // вывод отчета - end
+            
+            // закрываем все файлы
             sr.Close();
             bez_avtorskikh_sw.Close();
             s_avtorskimi_sw.Close();
+            
+            // под конец -- различная метаинформация
             total_sum = s_avtorskimi_sum + bez_avtorskikh_sum;
             Console.WriteLine("Подсчитанная сумма с авторскими: {0}",s_avtorskimi_sum);
             Console.WriteLine("Подсчитанная сумма без авторских: {0}",bez_avtorskikh_sum);
