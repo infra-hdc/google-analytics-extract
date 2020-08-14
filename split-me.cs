@@ -49,7 +49,7 @@ namespace split_me
             // для парсинга входного файла
             string s_avtorskimi_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
             Regex s_avtorskimi_regex = new Regex(s_avtorskimi_pattern);
-            string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund>\w+)_(?<pin>\d+)[^\,]+\,(?<num>\d+)$";
+            string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund_pin>\w+_\d+)[^\,]+\,(?<num>\d+)$";
             Regex bez_avtorskikh_regex = new Regex(bez_avtorskikh_pattern);
             string total_read_sum_pattern = @"^\,(?<num>\d+)$";
             Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
@@ -93,7 +93,7 @@ namespace split_me
                     if (matches.Count == 1) // если совпадение нашлось
                     {
                         groups = matches[0].Groups;
-                        bez_avtorskikh_sw.WriteLine("{0},{1},{2}",groups["fund"].Value.ToString(),groups["pin"].Value.ToString(),groups["num"].Value.ToString());
+                        bez_avtorskikh_sw.WriteLine("{0},{1}",groups["fund_pin"].Value.ToString().Replace("_", ","),groups["num"].Value.ToString());
                         bez_avtorskikh_sum += Int32.Parse(groups["num"].Value);
                     } else
                     {
