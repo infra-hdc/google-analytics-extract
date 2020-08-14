@@ -87,7 +87,7 @@ namespace split_me
             bez_avtorskikh_sw.WriteLine(bez_avtorskikh_head);
             
             // для общей суммы выдачи, для проверки
-            int s_avtorskimi_sum=0, bez_avtorskikh_sum=0, total_sum=0, total_read_sum=0;
+            int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, total_sum=0;
             
             // извлечение данных - begin
             string line; // текущая строка
@@ -99,37 +99,39 @@ namespace split_me
                     if (matches.Count == 1) // если совпадение нашлось
                     {
                         groups = matches[0].Groups;
-                        if (!bez_avtorskikh_aggr.ContainsKey(groups["fund_pin"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары
+                        int a = Int32.Parse(groups["num"].Value);
+                        if (!bez_avtorskikh_aggr.ContainsKey(groups["fund_pin"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары <fund>_<pin>
                             {
-                                // добавляем объект для пары
-                                bez_avtorskikh_aggr.Add(groups["fund_pin"].Value.ToString(), Int32.Parse(groups["num"].Value));
+                                // добавляем объект для новой пары <fund>_<pin>
+                                bez_avtorskikh_aggr.Add(groups["fund_pin"].Value.ToString(), a);
                             } else
-                            {   // иначе прибавляем к объекту
-                                bez_avtorskikh_aggr[groups["fund_pin"].Value.ToString()] += Int32.Parse(groups["num"].Value);
+                            {   // иначе прибавляем к объекту пары <fund>_<pin>
+                                bez_avtorskikh_aggr[groups["fund_pin"].Value.ToString()] += a;
                             }
-                        bez_avtorskikh_sum += Int32.Parse(groups["num"].Value);
+                        bez_avtorskikh_read_sum += a; // прибавляем к общей сумме без авторских
                     } else
                     {
                         matches = s_avtorskimi_regex.Matches(line);
                         if (matches.Count == 1) // если совпадение нашлось
                         {
                             groups = matches[0].Groups;
-                            if (!s_avtorskimi_aggr.ContainsKey(groups["orderid"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары
+                            int a = Int32.Parse(groups["num"].Value);
+                            if (!s_avtorskimi_aggr.ContainsKey(groups["orderid"].Value.ToString())) // если в массиве для результатов извлечения данных еще нету <orderid>
                                 {
-                                    // добавляем объект для пары
-                                    s_avtorskimi_aggr.Add(groups["orderid"].Value.ToString(), Int32.Parse(groups["num"].Value));
+                                    // добавляем объект для нового <orderid>
+                                    s_avtorskimi_aggr.Add(groups["orderid"].Value.ToString(), a);
                                 } else
-                                {   // иначе прибавляем к объекту
-                                    s_avtorskimi_aggr[groups["orderid"].Value.ToString()] += Int32.Parse(groups["num"].Value);
+                                {   // иначе прибавляем к объекту <orderid>
+                                    s_avtorskimi_aggr[groups["orderid"].Value.ToString()] += a;
                                 }
-                            s_avtorskimi_sum += Int32.Parse(groups["num"].Value);
+                            s_avtorskimi_read_sum += a; // прибавляем к общей сумме с авторскими
                         } else
                         {   // если признак конца данных
                             matches = total_read_sum_regex.Matches(line);
                             if (matches.Count == 1) // если совпадение нашлось
                             {
                                 groups = matches[0].Groups;
-                                total_read_sum = Int32.Parse(groups["num"].Value);  // считываем сумму
+                                total_sum = Int32.Parse(groups["num"].Value);  // считываем сумму
                                 break; // и выходим из цикла чтения входного файла
                             }
                         }
@@ -138,12 +140,15 @@ namespace split_me
             // извлечение данных - end
             
             // вывод данных - begin
+            int s_avtorskimi_write_sum=0, bez_avtorskikh_write_sum=0;
             foreach (KeyValuePair<string, int> kvp in bez_avtorskikh_aggr.OrderByDescending(key => key.Value))
             {
+                bez_avtorskikh_write_sum += kvp.Value;
                 bez_avtorskikh_sw.WriteLine("{0},{1}", kvp.Key.ToString().Replace("_", ","), kvp.Value.ToString());
             }
             foreach (KeyValuePair<string, int> kvp in s_avtorskimi_aggr.OrderByDescending(key => key.Value))
             {
+                s_avtorskimi_write_sum += kvp.Value;
                 s_avtorskimi_sw.WriteLine("{0},{1}", kvp.Key.ToString(), kvp.Value.ToString());
             }
             // вывод данных - end
@@ -154,12 +159,16 @@ namespace split_me
             s_avtorskimi_sw.Close();
             
             // под конец -- различная метаинформация
-            total_sum = s_avtorskimi_sum + bez_avtorskikh_sum;
-            Console.WriteLine("Подсчитанная сумма с авторскими: {0}",s_avtorskimi_sum);
-            Console.WriteLine("Подсчитанная сумма без авторских: {0}",bez_avtorskikh_sum);
-            Console.WriteLine("Общая подсчитанная сумма: {0}",total_sum);
-            Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_read_sum);
-            if (total_sum == total_read_sum)
+            int total_read_sum = s_avtorskimi_read_sum + bez_avtorskikh_read_sum;
+            int total_write_sum = s_avtorskimi_write_sum + bez_avtorskikh_write_sum;
+            Console.WriteLine("Подсчитанная сумма на этапе ввода, с авторскими: {0}",s_avtorskimi_read_sum);
+            Console.WriteLine("Подсчитанная сумма на этапе ввода, без авторских: {0}",bez_avtorskikh_read_sum);
+            Console.WriteLine("Общая подсчитанная сумма, на этапе ввода: {0}",total_read_sum);
+            Console.WriteLine("Подсчитанная сумма на этапе вывода, с авторскими: {0}",s_avtorskimi_write_sum);
+            Console.WriteLine("Подсчитанная сумма на этапе вывода, без авторских: {0}",bez_avtorskikh_write_sum);
+            Console.WriteLine("Общая подсчитанная сумма, на этапе вывода: {0}",total_write_sum);
+            Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_sum);
+            if ((total_sum == total_read_sum) && (total_sum == total_write_sum))
             {
                 Console.WriteLine("ВСЁ ОК, суммы совпадают");
                 return(0);
