@@ -47,9 +47,9 @@ namespace split_me
             }
 
             // для парсинга входного файла
-            string s_avtorskimi_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund>\w+)_(?<pin>\d+)[^\,]+\,(?<num>\d+)$";
+            string s_avtorskimi_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
             Regex s_avtorskimi_regex = new Regex(s_avtorskimi_pattern);
-            string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
+            string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund>\w+)_(?<pin>\d+)[^\,]+\,(?<num>\d+)$";
             Regex bez_avtorskikh_regex = new Regex(bez_avtorskikh_pattern);
             string total_read_sum_pattern = @"^\,(?<num>\d+)$";
             Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
@@ -89,7 +89,7 @@ namespace split_me
                 {
                     MatchCollection matches;
                     GroupCollection groups;
-                    matches = s_avtorskimi_regex.Matches(line); // натравливаем регулярку на нашу текущую строку файла
+                    matches = bez_avtorskikh_regex.Matches(line); // натравливаем регулярку на нашу текущую строку файла
                     if (matches.Count == 1) // если совпадение нашлось
                     {
                         groups = matches[0].Groups;
@@ -97,7 +97,7 @@ namespace split_me
                         bez_avtorskikh_sum += Int32.Parse(groups["num"].Value);
                     } else
                     {
-                        matches = bez_avtorskikh_regex.Matches(line);
+                        matches = s_avtorskimi_regex.Matches(line);
                         if (matches.Count == 1) // если совпадение нашлось
                         {
                             groups = matches[0].Groups;
