@@ -18,6 +18,11 @@ namespace split_me
             catch (IndexOutOfRangeException)
             {
                 Console.WriteLine("ОШИБКА, пропущен аргумент командной строки");
+                Console.WriteLine("Формат команды: split-me.exe <что-то-там>.csv");
+                Console.WriteLine("Где <что-то-там>.csv -- входной файл");
+                Console.WriteLine("На выходе -- два файла:");
+                Console.WriteLine("Выходной файл с авторскими: <что-то-там> - с авторскими -.csv");
+                Console.WriteLine("Выходной файл без авторских: <что-то-там> - без авторских -.csv");
                 return(1);
             }
             string fn_pattern  = @"^(?<fname>[^\.]+)\.(?:csv|CSV)$";
