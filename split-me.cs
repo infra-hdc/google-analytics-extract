@@ -129,7 +129,7 @@ namespace split_me
                             if (matches.Count == 1) // если совпадение нашлось
                             {
                                 groups = matches[0].Groups;
-                                total_read_sum = Int32.Parse(groups["num"].Value);  // счиитываем сумму
+                                total_read_sum = Int32.Parse(groups["num"].Value);  // считываем сумму
                                 break; // и выходим из цикла чтения входного файла
                             }
                         }
