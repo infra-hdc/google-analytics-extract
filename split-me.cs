@@ -6,6 +6,29 @@ using System.Linq;
 
 namespace split_me
 {
+
+    public static class UriExtensions
+    {
+        private static readonly Regex queryStringRegex;
+        static UriExtensions()
+        {
+            queryStringRegex = new Regex(@"[\?&](?<name>[^&=]+)=(?<value>[^&=]+)");
+        }
+
+        public static IEnumerable<KeyValuePair<string, string>> ParseQueryString(this string uri)
+        {
+            if (uri == null)
+                throw new ArgumentException("uri");
+
+            var matches = queryStringRegex.Matches(uri);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                var match = matches[i];
+                yield return new KeyValuePair<string, string>(match.Groups["name"].Value, match.Groups["value"].Value);
+            }
+        }
+    }
+
     class MainClass
     {
         public static int Main(string[] args)
@@ -46,18 +69,7 @@ namespace split_me
                 Console.WriteLine("ОШИБКА, входной файл не найден");
                 return(1); // то выход из программы               
             }
-
-            // регулярные выражения для парсинга входного файла
-            string s_avtorskimi_pattern = @"^\/Bookreader\/Viewer\?OrderId=(?<orderid>\d+)[^\,]+\,(?<num>\d+)$";
-            Regex s_avtorskimi_regex = new Regex(s_avtorskimi_pattern);
-            string bez_avtorskikh_pattern = @"^\/Bookreader\/Viewer\?bookID=(?<fund_pin>\w+_\d+)[^\,]+\,(?<num>\d+)$";
-            Regex bez_avtorskikh_regex = new Regex(bez_avtorskikh_pattern);
-            string total_read_sum_pattern = @"^\,(?<num>\d+)$";
-            Regex total_read_sum_regex = new Regex(total_read_sum_pattern);
             
-            Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по <ID-заказа>
-            Dictionary<string, int> bez_avtorskikh_aggr = new Dictionary<string, int>(); // количество обращений без авторских, сагрегированных по парам <фонд>_<пин>
-
             // для вывода в файлы:
             string s_avtorskimi_out_fname = base_fname+" - с авторскими -.csv";                
             string bez_avtorskikh_out_fname = base_fname+" - без авторских -.csv";
@@ -84,55 +96,59 @@ namespace split_me
             s_avtorskimi_sw.WriteLine(s_avtorskimi_head);
             StreamWriter bez_avtorskikh_sw = new StreamWriter(bez_avtorskikh_out_fname);
             bez_avtorskikh_sw.WriteLine(bez_avtorskikh_head);
+          
+            Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по <ID-заказа>
+            Dictionary<string, int> bez_avtorskikh_aggr = new Dictionary<string, int>(); // количество обращений без авторских, сагрегированных по парам <фонд>_<пин>
+
             
             // для общей суммы выдачи, для проверки
             int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, total_sum=0;
+            
+            //для поиска подстроки
+            string stroka_flag = @"/Bookreader/Viewer?";
             
             // ввод данных - begin
             string line; // текущая строка
             while ((line = sr.ReadLine()) != null) // цикл по всем строкам входного файла, пока не EOF
                 {
-                    MatchCollection matches;
-                    GroupCollection groups;
-                    matches = bez_avtorskikh_regex.Matches(line); // натравливаем регулярку на нашу текущую строку файла
-                    if (matches.Count == 1) // если совпадение нашлось
+                    if (line.Length > 1) if (line[0] == ',') // если совпадение нашлось
                     {
-                        groups = matches[0].Groups;
-                        int a = Int32.Parse(groups["num"].Value);
-                        if (!bez_avtorskikh_aggr.ContainsKey(groups["fund_pin"].Value.ToString())) // если в массиве для результатов извлечения данных еще нет этой пары <fund>_<pin>
+                        total_sum = Int32.Parse(line.Substring(1));  // считываем сумму
+                        break; // и выходим из цикла чтения входного файла
+                    }
+                    string[] splitted_line = line.Split(',');
+                    if (splitted_line.Length < 2) continue;
+                    if (!splitted_line[0].Contains(stroka_flag)) { continue; }
+                    var url_1 = splitted_line[0].ParseQueryString().ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                    int a = Int32.Parse(splitted_line[1]);
+                    string b = url_1.ContainsKey("bookID") ? url_1["bookID"] : null;
+                    string c = null;
+                    //string c = url_1["OrderId"];
+                    if (b != null) // если совпадение нашлось
+                    {
+                        if (!bez_avtorskikh_aggr.ContainsKey(b)) // если в массиве для результатов извлечения данных еще нет этой пары <fund>_<pin>
                             {
                                 // добавляем объект для новой пары <fund>_<pin>
-                                bez_avtorskikh_aggr.Add(groups["fund_pin"].Value.ToString(), a);
+                                bez_avtorskikh_aggr.Add(b, a);
                             } else
                             {   // иначе прибавляем к объекту пары <fund>_<pin>
-                                bez_avtorskikh_aggr[groups["fund_pin"].Value.ToString()] += a;
+                                bez_avtorskikh_aggr[b] += a;
                             }
                         bez_avtorskikh_read_sum += a; // прибавляем к общей сумме без авторских
                     } else
                     {
-                        matches = s_avtorskimi_regex.Matches(line);
-                        if (matches.Count == 1) // если совпадение нашлось
+                        c = url_1.ContainsKey("OrderId") ? url_1["OrderId"] : null;
+                        if (c != null) // если совпадение нашлось
                         {
-                            groups = matches[0].Groups;
-                            int a = Int32.Parse(groups["num"].Value);
-                            if (!s_avtorskimi_aggr.ContainsKey(groups["orderid"].Value.ToString())) // если в массиве для результатов извлечения данных еще нету <orderid>
+                            if (!s_avtorskimi_aggr.ContainsKey(c)) // если в массиве для результатов извлечения данных еще нету <orderid>
                                 {
                                     // добавляем объект для нового <orderid>
-                                    s_avtorskimi_aggr.Add(groups["orderid"].Value.ToString(), a);
+                                    s_avtorskimi_aggr.Add(c, a);
                                 } else
                                 {   // иначе прибавляем к объекту <orderid>
-                                    s_avtorskimi_aggr[groups["orderid"].Value.ToString()] += a;
+                                    s_avtorskimi_aggr[c] += a;
                                 }
                             s_avtorskimi_read_sum += a; // прибавляем к общей сумме с авторскими
-                        } else
-                        {   // если признак конца данных
-                            matches = total_read_sum_regex.Matches(line);
-                            if (matches.Count == 1) // если совпадение нашлось
-                            {
-                                groups = matches[0].Groups;
-                                total_sum = Int32.Parse(groups["num"].Value);  // считываем сумму
-                                break; // и выходим из цикла чтения входного файла
-                            }
                         }
                     }
                 }
