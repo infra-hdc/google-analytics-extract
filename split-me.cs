@@ -149,6 +149,8 @@ namespace split_me
                                     s_avtorskimi_aggr[c] += a;
                                 }
                             s_avtorskimi_read_sum += a; // прибавляем к общей сумме с авторскими
+                        } else {
+                            Console.WriteLine("Ошибочный URL: {0}, его NUM: {1}", splitted_line[0], a);
                         }
                     }
                 }
