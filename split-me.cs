@@ -6,7 +6,8 @@ using System.Linq;
 
 namespace split_me
 {
-
+    
+    // http://markimarta.ru/dev/asp-net-c/parsing-url-i-vytaskivanie-parametrov-get-zaprosa-cherez-regulyarnye-vyrazheniya-na-yazyke-c.html
     public static class UriExtensions
     {
         private static readonly Regex queryStringRegex;
@@ -115,7 +116,7 @@ namespace split_me
                         total_sum = Int32.Parse(line.Substring(1));  // считываем сумму
                         break; // и выходим из цикла чтения входного файла
                     }
-                    string[] splitted_line = line.Split(',');
+                    string[] splitted_line = line.Split(','); // https://www.cyberforum.ru/windows-forms/thread1228430.html
                     if (splitted_line.Length < 2) continue;
                     if (!splitted_line[0].Contains(stroka_flag)) { continue; }
                     var url_1 = splitted_line[0].ParseQueryString().ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
