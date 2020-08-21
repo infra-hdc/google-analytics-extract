@@ -102,7 +102,7 @@ namespace split_me
 
             
             // для общей суммы выдачи, для проверки
-            int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, total_sum=0;
+            int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, error_read_sum=0, total_sum=0;
             
             //для поиска подстроки
             string stroka_flag = @"/Bookreader/Viewer?";
@@ -150,6 +150,7 @@ namespace split_me
                                 }
                             s_avtorskimi_read_sum += a; // прибавляем к общей сумме с авторскими
                         } else {
+                            error_read_sum += a;
                             Console.WriteLine("Ошибочный URL: {0}, его NUM: {1}", splitted_line[0], a);
                         }
                     }
@@ -176,23 +177,40 @@ namespace split_me
             s_avtorskimi_sw.Close();
             
             // под конец -- различная метаинформация
-            int total_read_sum = s_avtorskimi_read_sum + bez_avtorskikh_read_sum;
+            int total_read_sum = s_avtorskimi_read_sum + bez_avtorskikh_read_sum + error_read_sum;
             int total_write_sum = s_avtorskimi_write_sum + bez_avtorskikh_write_sum;
+            Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_sum);
             Console.WriteLine("Подсчитанная сумма на этапе ввода, с авторскими: {0}",s_avtorskimi_read_sum);
             Console.WriteLine("Подсчитанная сумма на этапе ввода, без авторских: {0}",bez_avtorskikh_read_sum);
+            Console.WriteLine("Подсчитанная сумма на этапе ввода, ошибочных выдач: {0}",error_read_sum);
             Console.WriteLine("Общая подсчитанная сумма, на этапе ввода: {0}",total_read_sum);
             Console.WriteLine("Подсчитанная сумма на этапе вывода, с авторскими: {0}",s_avtorskimi_write_sum);
             Console.WriteLine("Подсчитанная сумма на этапе вывода, без авторских: {0}",bez_avtorskikh_write_sum);
             Console.WriteLine("Общая подсчитанная сумма, на этапе вывода: {0}",total_write_sum);
-            Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_sum);
-            if ((total_sum == total_read_sum) && (total_sum == total_write_sum))
+            l_error=false;
+            if (total_sum == total_read_sum)
             {
-                Console.WriteLine("ВСЁ ОК, суммы совпадают");
-                return(0);
+                Console.WriteLine("ОК, суммы при вводе совпадают с суммой, указанной во входном файле");
             } else
             {
-                Console.WriteLine("ОШИБКА, суммы не совпадают");
+                Console.WriteLine("ОШИБКА, суммы при вводе не совпадают с суммой, указанной во входном файле");
+                l_error=true;
+            }
+            if (total_sum == total_write_sum)
+            {
+                Console.WriteLine("ОК, суммы при выводе совпадают с суммой, указанной во входном файле");
+            } else
+            {
+                Console.WriteLine("ОШИБКА, суммы при выводе не совпадают с суммой, указанной во входном файле");
+                l_error=true;
+            }
+            if (l_error)
+            {
+                Console.WriteLine("Обработка завершена с ошибками");
                 return(1);
+            } else {
+                Console.WriteLine("Обработка завершена без ошибок");
+                return(0);
             }
         }
     }
