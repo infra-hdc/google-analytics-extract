@@ -91,7 +91,7 @@ namespace split_me
             }
             if (l_error) return(1);
             
-            // начало вывода в файлы: открываем на запись (старое содержимое удаляется) и выводим шапку
+            // начало вывода в файлы: открываем на запись и выводим шапку; ничего из старого вывода не должно быть перезаписано, см. выше проверку на существование файлов
             StreamWriter s_avtorskimi_sw = new StreamWriter(s_avtorskimi_out_fname);
             s_avtorskimi_sw.WriteLine(s_avtorskimi_head);
             StreamWriter bez_avtorskikh_sw = new StreamWriter(bez_avtorskikh_out_fname);
@@ -100,7 +100,6 @@ namespace split_me
             Dictionary<string, int> s_avtorskimi_aggr = new Dictionary<string, int>(); // количество обращений c авторскими, сагрегированных по <ID-заказа>
             Dictionary<string, int> bez_avtorskikh_aggr = new Dictionary<string, int>(); // количество обращений без авторских, сагрегированных по парам <фонд>_<пин>
 
-            
             // для общей суммы выдачи, для проверки
             int s_avtorskimi_read_sum=0, bez_avtorskikh_read_sum=0, error_read_sum=0, total_sum=0;
             
@@ -179,16 +178,13 @@ namespace split_me
             // под конец -- различная метаинформация
             int total_read_sum = s_avtorskimi_read_sum + bez_avtorskikh_read_sum + error_read_sum;
             int total_write_sum = s_avtorskimi_write_sum + bez_avtorskikh_write_sum;
+            l_error=false;
             Console.WriteLine("Общая прочитанная из входного файла сумма: {0}",total_sum);
             Console.WriteLine("Подсчитанная сумма на этапе ввода, с авторскими: {0}",s_avtorskimi_read_sum);
             Console.WriteLine("Подсчитанная сумма на этапе ввода, без авторских: {0}",bez_avtorskikh_read_sum);
             Console.WriteLine("Подсчитанная сумма на этапе ввода, ошибочных выдач: {0}",error_read_sum);
             Console.WriteLine("Общая подсчитанная сумма, на этапе ввода: {0}",total_read_sum);
-            Console.WriteLine("Подсчитанная сумма на этапе вывода, с авторскими: {0}",s_avtorskimi_write_sum);
-            Console.WriteLine("Подсчитанная сумма на этапе вывода, без авторских: {0}",bez_avtorskikh_write_sum);
-            Console.WriteLine("Общая подсчитанная сумма, на этапе вывода: {0}",total_write_sum);
-            l_error=false;
-            if (total_sum == total_read_sum)
+            if (total_read_sum == total_sum)
             {
                 Console.WriteLine("ОК, суммы при вводе совпадают с суммой, указанной во входном файле");
             } else
@@ -196,7 +192,10 @@ namespace split_me
                 Console.WriteLine("ОШИБКА, суммы при вводе не совпадают с суммой, указанной во входном файле");
                 l_error=true;
             }
-            if (total_sum == total_write_sum)
+            Console.WriteLine("Подсчитанная сумма на этапе вывода, с авторскими: {0}",s_avtorskimi_write_sum);
+            Console.WriteLine("Подсчитанная сумма на этапе вывода, без авторских: {0}",bez_avtorskikh_write_sum);
+            Console.WriteLine("Общая подсчитанная сумма, на этапе вывода: {0}",total_write_sum);
+            if (total_write_sum == total_sum)
             {
                 Console.WriteLine("ОК, суммы при выводе совпадают с суммой, указанной во входном файле");
             } else
